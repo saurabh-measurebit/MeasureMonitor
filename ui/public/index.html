@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Client Management</h1>
+        
+        <!-- Add Client Button -->
+        <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#clientModal">
+            Add New Client
+        </button>
+
+        <!-- Clients Table -->
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Client Name</th>
+                        <th>Project ID</th>
+                        <th>GA Property ID</th>
+                        <th>Events List</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="clientsTableBody">
+                    <!-- Client data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Client Modal -->
+        <div class="modal fade" id="clientModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Add New Client</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="clientForm">
+                            <input type="hidden" id="clientId">
+                            <div class="mb-3">
+                                <label for="clientName" class="form-label">Client Name (ID)</label>
+                                <input type="text" class="form-control" id="clientName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="projectId" class="form-label">Project ID</label>
+                                <input type="text" class="form-control" id="projectId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="gaPropertyId" class="form-label">GA Property ID</label>
+                                <input type="text" class="form-control" id="gaPropertyId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="eventsList" class="form-label">Events List (comma-separated)</label>
+                                <input type="text" class="form-control" id="eventsList" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="minAverage" class="form-label">Minimum Average (minimum number of events required)</label>
+                                <input type="number" class="form-control" id="minAverage" value="10" min="1">
+                                <small class="form-text text-muted">Minimum number of events required before alerting is enabled</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="stdDevMultiplier" class="form-label">Standard Deviation Multiplier</label>
+                                <input type="number" class="form-control" id="stdDevMultiplier" step="0.1" value="1.5" min="0.1">
+                                <small class="form-text text-muted">How many standard deviations from the mean before alerting (e.g., 1.5 = alert if value is 1.5 standard deviations away from mean)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="thresholdPercentage" class="form-label">Threshold Percentage</label>
+                                <input type="number" class="form-control" id="thresholdPercentage" value="25" min="1" max="100">
+                                <small class="form-text text-muted">Percentage deviation from average before alerting (e.g., 25 = alert if value deviates by 25% from mean)</small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveClient">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

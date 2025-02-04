@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": "ui/public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.map",
+      "**/dev-server.js",
+      "**/serviceAccountKey.json"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "predeploy": [
+      "npm --prefix ui install"
+    ]
+  },
+  "functions": {
+    "source": "ui",
+    "runtime": "nodejs18"
+  }
+}
