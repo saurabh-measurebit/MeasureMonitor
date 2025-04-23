@@ -1,0 +1,54 @@
+config {
+  type: "incremental",
+  description: "Logs all event monitoring results for historical analysis",
+  schema: "dataform",
+  database: "gtm-tlws88nt-yjy2m",
+  bigquery: {
+    partitionBy: "detection_date",
+    updatePartitionFilter: "detection_date = CURRENT_DATE()"
+  },
+  dependencies: ["event_anomalies"]
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+-- Log all anomaly detection results with a timestamp
+${when(incremental(), `
+-- When running incrementally, only log today's results
+SELECT
+  event_name,
+  event_count,
+  event_date,
+  avg_count,
+  stddev_count,
+  lower_threshold,
+  is_anomaly,
+  alert_message,
+  detection_time,
+  CURRENT_DATE() as detection_date,
+  '${clientConfig.client_id}' as client_id,
+  '${clientConfig.dataset_id}' as dataset_id
+FROM
+  ${ref("event_anomalies")}
+`, `
+-- Initial load (same as incremental for this table)
+SELECT
+  event_name,
+  event_count,
+  event_date,
+  avg_count,
+  stddev_count,
+  lower_threshold,
+  is_anomaly,
+  alert_message,
+  detection_time,
+  CURRENT_DATE() as detection_date,
+  '${clientConfig.client_id}' as client_id,
+  '${clientConfig.dataset_id}' as dataset_id
+FROM
+  ${ref("event_anomalies")}
+`)}

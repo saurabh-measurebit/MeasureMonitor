@@ -1,0 +1,30 @@
+config {
+  type: "table",
+  description: "Creates notification records for event anomalies",
+  dependencies: ["event_anomalies"],
+  tags: ["event_monitoring", "notifications"]
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+-- Filter only records with anomalies
+SELECT
+  '${clientConfig.client_id}' as client_id,
+  '${clientConfig.ga_property_id}' as ga_property_id,
+  event_name,
+  event_count,
+  event_date,
+  avg_count,
+  stddev_count,
+  lower_threshold,
+  alert_message,
+  detection_time,
+  FALSE as notification_sent
+FROM
+  ${ref("event_anomalies")}
+WHERE
+  is_anomaly = TRUE

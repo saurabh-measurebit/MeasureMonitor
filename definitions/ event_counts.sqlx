@@ -1,0 +1,59 @@
+config {
+  type: "table",
+  description: "Gets event counts for all monitored events",
+  dependencies: ["latest_partition"],
+  tags: ["event_monitoring"],
+  schema: "dataform",
+  database: "gtm-tlws88nt-yjy2m"
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+-- Query for event counts - optimized to reduce data processing
+WITH
+-- Get the latest partition
+latest_partition AS (
+  SELECT last_partition
+  FROM ${ref("latest_partition")}
+),
+-- Convert partition to date
+partition_date AS (
+  SELECT
+    PARSE_DATE('%Y%m%d', last_partition) as date,
+    last_partition
+  FROM latest_partition
+),
+-- Calculate the current year
+year_data AS (
+  SELECT
+    EXTRACT(YEAR FROM CURRENT_DATE()) as year
+),
+-- Get filtered event data
+events_data AS (
+  SELECT
+    event_name,
+    partition_date.date as event_date,
+    partition_date.last_partition
+  FROM partition_date,
+    -- Use specific table suffix with dynamic reference
+    `${clientConfig.project_id}.${clientConfig.dataset_id}.events_*` as events
+  WHERE
+    -- Match the specific partition
+    _TABLE_SUFFIX = partition_date.last_partition
+    -- Filter only the events we care about
+    AND event_name IN (${clientConfig.events_list.map(e => `'${e}'`).join(', ')})
+)
+
+SELECT
+  event_name,
+  COUNT(1) as event_count,
+  CURRENT_TIMESTAMP() as timestamp,
+  event_date
+FROM events_data
+GROUP BY
+  event_name,
+  event_date
