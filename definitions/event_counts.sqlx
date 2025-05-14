@@ -37,7 +37,7 @@ events_data AS (
     `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events
   WHERE
     _TABLE_SUFFIX = partition_date.latest_partition
-    AND event_name IN (${dataform.projectConfig.vars.events_list.split(',').join(',')})
+    AND event_name IN (${dataform.projectConfig.vars.events_list.split('#').map(e => `'${e}'`).join(', ')})
 )
 
 SELECT
