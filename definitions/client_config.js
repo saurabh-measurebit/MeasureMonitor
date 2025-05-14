@@ -20,7 +20,7 @@ const clients = {
   bosslaser: {
     client_id: "bosslaser",
     ga_property_id: "308825090",
-    project_id: "gtm-tlws88nt-yjy2m",
+    project_id: "gtm-pz6pxlxs-owq4n",
     dataset_id: "analytics_308825090",
     events_list: ["quote_created", "session_start", "purchase"],
     // Default thresholds for all events

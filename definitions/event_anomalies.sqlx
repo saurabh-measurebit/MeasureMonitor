@@ -4,7 +4,7 @@ config {
   dependencies: ["event_counts", "historical_event_counts"],
   tags: ["event_monitoring", "anomaly_detection"],
   schema: "dataform",
-  database: "gtm-tlws88nt-yjy2m"
+  database: "gtm-pz6pxlxs-owq4n"
 }
 
 -- Import the client configuration

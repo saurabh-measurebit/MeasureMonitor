@@ -4,7 +4,7 @@ config {
   dependencies: ["latest_partition"],
   tags: ["event_monitoring"],
   schema: "dataform",
-  database: "gtm-tlws88nt-yjy2m"
+  database: "gtm-pz6pxlxs-owq4n"
 }
 
 -- Import the client configuration
@@ -40,7 +40,7 @@ events_data AS (
     partition_date.last_partition
   FROM partition_date,
     -- Use specific table suffix with dynamic reference
-    `${clientConfig.project_id}.${clientConfig.dataset_id}.events_*` as events
+    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events
   WHERE
     -- Match the specific partition
     _TABLE_SUFFIX = partition_date.last_partition

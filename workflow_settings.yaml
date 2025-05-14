@@ -1,0 +1,5 @@
+defaultProject: gtm-pz6pxlxs-owq4n
+defaultLocation: US
+defaultDataset: dataform
+defaultAssertionDataset: dataform_assertions
+dataformCoreVersion: 3.0.0

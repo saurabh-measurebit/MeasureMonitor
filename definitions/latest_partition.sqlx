@@ -3,7 +3,7 @@ config {
   description: "Gets the latest partition for the GA events table",
   tags: ["event_monitoring"],
   schema: "dataform",
-  database: "gtm-tlws88nt-yjy2m"
+  database: "gtm-pz6pxlxs-owq4n"
 }
 
 -- Import the client configuration
@@ -12,13 +12,11 @@ js {
   const clientConfig = config.clientConfig;
 }
 
-WITH year_data AS (
+WITH
+latest_partition AS (
   SELECT
-    EXTRACT(YEAR FROM CURRENT_DATE()) as year
+    '${dataform.projectConfig.vars.analytics_table}' AS source_table,
+    MAX(_TABLE_SUFFIX) AS latest_partition
+  FROM
+    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_${new Date().getFullYear()}*`
 )
-SELECT
-  MAX(_TABLE_SUFFIX) as last_partition
-FROM
-  `${clientConfig.project_id}.${clientConfig.dataset_id}.events_*`
-WHERE
-  _TABLE_SUFFIX LIKE CONCAT(CAST(EXTRACT(YEAR FROM CURRENT_DATE()) AS STRING), '%')

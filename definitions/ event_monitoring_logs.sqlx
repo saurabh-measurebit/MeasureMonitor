@@ -2,7 +2,7 @@ config {
   type: "incremental",
   description: "Logs all event monitoring results for historical analysis",
   schema: "dataform",
-  database: "gtm-tlws88nt-yjy2m",
+  database: "gtm-pz6pxlxs-owq4n",
   bigquery: {
     partitionBy: "detection_date",
     updatePartitionFilter: "detection_date = CURRENT_DATE()"
