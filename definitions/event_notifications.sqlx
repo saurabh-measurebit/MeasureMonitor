@@ -1,7 +1,7 @@
 config {
   type: "assertion",
   description: "Raises an error if any event anomalies exist (alerts present)",
-  dependencies: ["event_check_anomalies"],
+  dependencies: ["event_check_anomalies","event_monitoring_logs"],
   tags: ["event_monitoring", "notifications"]
 }
 

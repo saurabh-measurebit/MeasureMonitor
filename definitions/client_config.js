@@ -16,13 +16,8 @@ const DEFAULT_THRESHOLDS = {
 
 // Client-specific configurations
 const clients = {
-  // BossLaser configuration
-  bosslaser: {
-    client_id: "bosslaser",
-    ga_property_id: "308825090",
-    project_id: "gtm-pz6pxlxs-owq4n",
-    dataset_id: "analytics_308825090",
-    events_list: ["quote_created", "session_start", "purchase"],
+  // default configuration
+  default: {
     // Default thresholds for all events
     ...DEFAULT_THRESHOLDS,
     // Event-specific configurations (override defaults)
@@ -38,33 +33,11 @@ const clients = {
         min_average: 8
       }
     }
-  },
-
-  // Template for adding new clients
-  // Uncomment and fill in the values for a new client
-  /*
-  new_client: {
-    client_id: "new_client",
-    ga_property_id: "YOUR_GA_PROPERTY_ID",
-    project_id: "YOUR_GCP_PROJECT_ID",
-    dataset_id: "YOUR_GA_DATASET_ID",
-    events_list: ["event1", "event2", "event3"],
-    // Default thresholds for all events
-    ...DEFAULT_THRESHOLDS,
-    // Event-specific configurations (override defaults)
-    event_configs: {
-      event1: {
-        threshold_percentage: 20,
-        std_dev_multiplier: 1.8,
-        min_average: 8
-      }
-    }
   }
-  */
 };
 
 // Set the active client ID here
-const ACTIVE_CLIENT_ID = "bosslaser";
+const ACTIVE_CLIENT_ID = "default";
 
 // Export the active client configuration
 module.exports = {

@@ -3,8 +3,7 @@ config {
   description: "Gets event counts for all monitored events",
   dependencies: ["latest_partition"],
   tags: ["event_monitoring"],
-  schema: "dataform",
-  database: "gtm-pz6pxlxs-owq4n"
+  schema: "dataform"
 }
 
 -- Import the client configuration
