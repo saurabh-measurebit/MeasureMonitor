@@ -1,5 +1,10 @@
-defaultProject: gtm-pz6pxlxs-owq4n
+defaultProject: <project_id>
 defaultLocation: US
 defaultDataset: dataform
 defaultAssertionDataset: dataform_assertions
 dataformCoreVersion: 3.0.0
+vars:
+  analytics_table: <analytics_xxxxx>
+  dataset: <project_id>
+  events_list: purchase#session_start#page_view # '#' separated event names
+#
