@@ -12,11 +12,14 @@ js {
   const clientConfig = config.clientConfig;
 }
 
-WITH
-latest_partition AS (
+
+WITH year_data AS (
   SELECT
-    '${dataform.projectConfig.vars.analytics_table}' AS source_table,
-    MAX(_TABLE_SUFFIX) AS latest_partition
-  FROM
-    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_${new Date().getFullYear()}*`
+    EXTRACT(YEAR FROM CURRENT_DATE()) as year
 )
+SELECT
+  MAX(_TABLE_SUFFIX) as latest_partition
+FROM
+  `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*`
+WHERE
+  _TABLE_SUFFIX LIKE CONCAT(CAST(EXTRACT(YEAR FROM CURRENT_DATE()) AS STRING), '%')
