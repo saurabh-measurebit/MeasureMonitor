@@ -1,0 +1,50 @@
+config {
+  type: "table",
+  description: "Gets event counts for all monitored events",
+  dependencies: ["latest_partition"],
+  tags: ["event_monitoring"],
+  schema: "dataform"
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+-- Query for event counts - optimized to reduce data processing
+WITH
+-- Get the latest partition
+latest_partition AS (
+  SELECT latest_partition
+  FROM ${ref("latest_partition")}
+),
+-- Convert partition to date
+partition_date AS (
+  SELECT
+    PARSE_DATE('%Y%m%d', lp.latest_partition) as event_date,
+    lp.latest_partition
+  FROM latest_partition lp
+),
+-- Get filtered event data
+events_data AS (
+  SELECT
+    event_name,
+    partition_date.event_date,
+    partition_date.latest_partition
+  FROM partition_date,
+    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events
+  WHERE
+    _TABLE_SUFFIX = partition_date.latest_partition
+    AND event_name IN (${dataform.projectConfig.vars.events_list.split('#').map(e => `'${e}'`).join(', ')})
+)
+
+SELECT
+  event_name,
+  COUNT(1) as event_count,
+  CURRENT_TIMESTAMP() as timestamp,
+  event_date
+FROM events_data
+GROUP BY
+  event_name,
+  event_date

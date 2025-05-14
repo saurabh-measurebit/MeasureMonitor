@@ -1,0 +1,24 @@
+config {
+  type: "table",
+  description: "Gets the latest partition for the GA events table",
+  tags: ["event_monitoring"],
+  schema: "dataform"
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+
+WITH year_data AS (
+  SELECT
+    EXTRACT(YEAR FROM CURRENT_DATE()) as year
+)
+SELECT
+  MAX(_TABLE_SUFFIX) as latest_partition
+FROM
+  `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*`
+WHERE
+  _TABLE_SUFFIX LIKE CONCAT(CAST(EXTRACT(YEAR FROM CURRENT_DATE()) AS STRING), '%')

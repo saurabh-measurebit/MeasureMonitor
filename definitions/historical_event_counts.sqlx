@@ -1,0 +1,30 @@
+config {
+  type: "table",
+  description: "Counts events from the past 7 days for anomaly detection",
+  schema: "dataform"
+}
+
+-- Import the client configuration
+js {
+  const config = require("./client_config");
+  const clientConfig = config.clientConfig;
+}
+
+-- Query to count events by date for the past 7 days
+SELECT
+  PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) as event_date,
+  event_name,
+  COUNT(*) as event_count
+FROM
+    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events
+WHERE
+  _TABLE_SUFFIX BETWEEN
+    FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY))
+    AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+    AND event_name IN (${dataform.projectConfig.vars.events_list.split('#').map(e => `'${e}'`).join(', ')})
+GROUP BY
+  event_date,
+  event_name
+ORDER BY
+  event_date DESC,
+  event_name
