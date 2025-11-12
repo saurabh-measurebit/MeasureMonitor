@@ -1,0 +1,30 @@
+config {
+  type: "assertion",
+  description: "Raises an error if the GA4 data partition is stale",
+  dependencies: ["partition_freshness"],
+  tags: ["event_monitoring", "data_quality", "alerts"]
+}
+
+-- This assertion will fail if the partition is stale
+-- Provides detailed information about the staleness
+SELECT
+  CONCAT(
+    '⚠️ DATA FRESHNESS ALERT: ',
+    status_message,
+    '\n',
+    'Latest Partition: ', latest_partition,
+    '\n',
+    'Partition Date: ', CAST(partition_date AS STRING),
+    '\n',
+    'Current Date: ', CAST(check_date AS STRING),
+    '\n',
+    'Days Old: ', CAST(days_old AS STRING),
+    '\n',
+    'Severity: ', severity,
+    '\n',
+    'Check Time: ', CAST(check_timestamp AS STRING)
+  ) as error_message
+FROM
+  ${ref("partition_freshness")}
+WHERE
+  is_stale = TRUE

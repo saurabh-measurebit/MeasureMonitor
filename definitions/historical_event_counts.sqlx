@@ -4,12 +4,6 @@ config {
   schema: "dataform"
 }
 
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
-}
-
 -- Query to count events by date for the past 7 days
 SELECT
   PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) as event_date,

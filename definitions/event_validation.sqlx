@@ -1,0 +1,176 @@
+config {
+  type: "table",
+  description: "Validates required fields for different event types",
+  dependencies: ["latest_partition", "partition_freshness"],
+  tags: ["event_monitoring"],
+  schema: "dataform"
+}
+
+js {
+  // Define validation parameters for each event type
+  // This allows for easy configuration of which fields to validate for each event
+  const eventValidations = {
+    purchase: {
+      requiredParams: [
+        { key: 'currency', valueType: 'string_value' },
+        { key: 'value', valueType: 'any' },
+        { key: 'transaction_id', valueType: 'any' }
+      ]
+    },
+    page_view: {
+      requiredParams: [
+        { key: 'page_title', valueType: 'string_value' },
+        { key: 'page_location', valueType: 'string_value' }
+      ]
+    },
+    session_start: {
+      requiredParams: []
+    }
+    // Add more event types here as needed
+    // The system will automatically handle any event in events_list
+    // If not explicitly defined here, it will only validate user_pseudo_id
+  };
+}
+
+-- Query for event validation - checks required fields for different event types
+WITH
+-- Get the latest partition
+latest_partition AS (
+  SELECT latest_partition
+  FROM ${ref("latest_partition")}
+),
+-- Convert partition to date
+partition_date AS (
+  SELECT
+    PARSE_DATE('%Y%m%d', lp.latest_partition) as event_date,
+    lp.latest_partition
+  FROM latest_partition lp
+),
+-- Get filtered event data from the latest partition
+events_data AS (
+  SELECT
+    event_name,
+    event_params,
+    user_pseudo_id,
+    user_id,
+    partition_date.event_date,
+    partition_date.latest_partition
+  FROM partition_date,
+    `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events
+  WHERE
+    _TABLE_SUFFIX = partition_date.latest_partition
+    AND event_name IN (${dataform.projectConfig.vars.events_list.split('#').map(e => `'${e}'`).join(', ')})
+),
+
+-- Base validation for all event types
+base_validation AS (
+  SELECT
+    event_name,
+    event_date,
+    COUNT(*) as total_events,
+    COUNTIF(user_pseudo_id IS NOT NULL) as events_with_pseudo_id,
+    COUNTIF(user_pseudo_id IS NULL) as events_missing_pseudo_id,
+    ROUND(COUNTIF(user_pseudo_id IS NOT NULL) / NULLIF(COUNT(*), 0) * 100, 2) as pseudo_id_coverage_pct
+  FROM events_data
+  GROUP BY event_name, event_date
+)
+
+-- Generate the final validation results
+SELECT
+  base_validation.event_name as event_type,
+  base_validation.event_date,
+  MAX(partition_date.latest_partition) as latest_partition,
+  total_events,
+  events_with_pseudo_id,
+  events_missing_pseudo_id,
+  
+  -- Purchase specific validations
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'currency') IS NOT NULL)
+  WHEN base_validation.event_name = 'page_view' THEN
+    COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'page_title') IS NOT NULL)
+  WHEN base_validation.event_name = 'form_submit' THEN
+    COUNTIF(user_id IS NOT NULL)
+  ELSE NULL
+  END as events_with_param1,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    -- Check for any value-related parameter
+    COUNTIF(
+      EXISTS(SELECT 1 FROM UNNEST(events_data.event_params) WHERE key IN ('value', 'ecommerce', 'purchase_revenue', 'revenue'))
+    )
+  WHEN base_validation.event_name = 'page_view' THEN
+    COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'page_location') IS NOT NULL)
+  WHEN base_validation.event_name = 'form_submit' THEN
+    NULL
+  ELSE NULL
+  END as events_with_param2,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    COUNTIF(EXISTS(SELECT 1 FROM UNNEST(events_data.event_params) WHERE key = 'transaction_id'))
+  WHEN base_validation.event_name = 'form_submit' THEN
+    NULL
+  ELSE NULL
+  END as events_with_param3,
+  
+  -- Coverage percentages
+  pseudo_id_coverage_pct,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    ROUND(COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'currency') IS NOT NULL) / NULLIF(COUNT(*), 0) * 100, 2)
+  WHEN base_validation.event_name = 'page_view' THEN
+    ROUND(COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'page_title') IS NOT NULL) / NULLIF(COUNT(*), 0) * 100, 2)
+  WHEN base_validation.event_name = 'form_submit' THEN
+    ROUND(COUNTIF(user_id IS NOT NULL) / NULLIF(COUNT(*), 0) * 100, 2)
+  ELSE NULL
+  END as param1_coverage_pct,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    -- Simplified percentage calculation
+    ROUND(COUNTIF(
+      EXISTS(SELECT 1 FROM UNNEST(events_data.event_params) WHERE key IN ('value', 'ecommerce', 'purchase_revenue', 'revenue'))
+    ) / NULLIF(COUNT(*), 0) * 100, 2)
+  WHEN base_validation.event_name = 'page_view' THEN
+    ROUND(COUNTIF((SELECT value.string_value FROM UNNEST(events_data.event_params) WHERE key = 'page_location') IS NOT NULL) / NULLIF(COUNT(*), 0) * 100, 2)
+  WHEN base_validation.event_name = 'form_submit' THEN
+    NULL
+  ELSE NULL
+  END as param2_coverage_pct,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN
+    ROUND(COUNTIF(EXISTS(SELECT 1 FROM UNNEST(events_data.event_params) WHERE key = 'transaction_id')) / NULLIF(COUNT(*), 0) * 100, 2)
+  WHEN base_validation.event_name = 'form_submit' THEN
+    NULL
+  ELSE NULL
+  END as param3_coverage_pct,
+  
+  -- Parameter names for better readability in results
+  CASE WHEN base_validation.event_name = 'purchase' THEN 'currency'
+       WHEN base_validation.event_name = 'page_view' THEN 'page_title'
+       WHEN base_validation.event_name = 'form_submit' THEN 'user_id'
+       ELSE NULL
+  END as param1_name,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN 'value'
+       WHEN base_validation.event_name = 'page_view' THEN 'page_location'
+       WHEN base_validation.event_name = 'form_submit' THEN NULL
+       ELSE NULL
+  END as param2_name,
+  
+  CASE WHEN base_validation.event_name = 'purchase' THEN 'transaction_id'
+       WHEN base_validation.event_name = 'form_submit' THEN NULL
+       ELSE NULL
+  END as param3_name,
+  
+  CURRENT_TIMESTAMP() as validation_timestamp
+FROM base_validation
+LEFT JOIN events_data ON base_validation.event_name = events_data.event_name AND base_validation.event_date = events_data.event_date
+LEFT JOIN partition_date ON TRUE
+GROUP BY 
+  base_validation.event_name,
+  base_validation.event_date,
+  total_events,
+  events_with_pseudo_id,
+  events_missing_pseudo_id,
+  pseudo_id_coverage_pct
+ORDER BY base_validation.event_date DESC, base_validation.event_name

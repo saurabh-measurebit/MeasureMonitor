@@ -1,0 +1,33 @@
+config {
+  type: "table",
+  description: "Diagnostic table to understand purchase event structure",
+  dependencies: ["latest_partition"],
+  tags: ["event_monitoring", "diagnostic"],
+  schema: "dataform"
+}
+
+-- Diagnostic query to understand purchase event structure
+WITH latest_partition_data AS (
+  SELECT latest_partition
+  FROM ${ref("latest_partition")}
+)
+
+SELECT
+  event_name,
+  (SELECT param.key FROM UNNEST(event_params) param WHERE param.key = 'value') as has_value_param,
+  (SELECT param.value.string_value FROM UNNEST(event_params) param WHERE param.key = 'value') as value_string,
+  (SELECT param.value.int_value FROM UNNEST(event_params) param WHERE param.key = 'value') as value_int,
+  (SELECT param.value.float_value FROM UNNEST(event_params) param WHERE param.key = 'value') as value_float,
+  (SELECT param.value.double_value FROM UNNEST(event_params) param WHERE param.key = 'value') as value_double,
+  -- Check for value in ecommerce.purchase_revenue
+  (SELECT param.key FROM UNNEST(event_params) param WHERE param.key = 'ecommerce') as has_ecommerce_param,
+  -- Check for value in items array (simplified)
+  (SELECT COUNT(1) FROM UNNEST(event_params) param WHERE param.key = 'items') as items_count,
+  -- Output all parameters for inspection
+  TO_JSON_STRING(event_params) as all_params
+FROM `${dataform.projectConfig.vars.dataset}.${dataform.projectConfig.vars.analytics_table}.events_*` as events,
+     latest_partition_data
+WHERE
+  _TABLE_SUFFIX = latest_partition_data.latest_partition
+  AND event_name = 'purchase'
+LIMIT 20

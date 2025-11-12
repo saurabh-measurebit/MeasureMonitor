@@ -1,0 +1,26 @@
+config {
+  type: "view",
+  description: "View of current event anomalies with detailed information",
+  dependencies: ["event_check_anomalies"],
+  tags: ["event_monitoring", "notifications"],
+  schema: "dataform"
+}
+
+-- Create a view with all anomaly details for easy querying
+SELECT
+  event_name,
+  event_count,
+  event_date,
+  ROUND(avg_count, 2) as avg_count,
+  ROUND(stddev_count, 2) as stddev_count,
+  ROUND(lower_threshold, 2) as lower_threshold,
+  ROUND((1 - (event_count / avg_count)) * 100, 2) as deviation_percentage,
+  alert_message,
+  detection_time,
+  CURRENT_DATE() as query_date
+FROM
+  ${ref("event_check_anomalies")}
+WHERE
+  is_anomaly = TRUE
+ORDER BY
+  deviation_percentage DESC

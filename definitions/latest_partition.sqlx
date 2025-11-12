@@ -5,13 +5,6 @@ config {
   schema: "dataform"
 }
 
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
-}
-
-
 WITH year_data AS (
   SELECT
     EXTRACT(YEAR FROM CURRENT_DATE()) as year

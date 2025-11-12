@@ -1,15 +1,9 @@
 config {
   type: "table",
   description: "Gets event counts for all monitored events",
-  dependencies: ["latest_partition"],
+  dependencies: ["latest_partition", "partition_freshness"],
   tags: ["event_monitoring"],
   schema: "dataform"
-}
-
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
 }
 
 -- Query for event counts - optimized to reduce data processing

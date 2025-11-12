@@ -6,12 +6,6 @@ config {
   schema: "dataform"
 }
 
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
-}
-
 -- Get current event counts
 WITH current_counts AS (
   SELECT * FROM ${ref("event_counts")}
@@ -38,16 +32,16 @@ event_thresholds AS (
   SELECT
     event_name,
     CASE
-      ${Object.entries(clientConfig.event_configs || {}).map(([event, config]) => `WHEN event_name = '${event}' THEN ${config.threshold_percentage}`).join('\n      ')}
-      ELSE ${clientConfig.threshold_percentage}
+      WHEN event_name = 'purchase' THEN ${dataform.projectConfig.vars.purchase_threshold_percentage}
+      ELSE ${dataform.projectConfig.vars.threshold_percentage}
     END as threshold_percentage,
     CASE
-      ${Object.entries(clientConfig.event_configs || {}).map(([event, config]) => `WHEN event_name = '${event}' THEN ${config.std_dev_multiplier}`).join('\n      ')}
-      ELSE ${clientConfig.std_dev_multiplier}
+      WHEN event_name = 'purchase' THEN ${dataform.projectConfig.vars.purchase_std_dev_multiplier}
+      ELSE ${dataform.projectConfig.vars.std_dev_multiplier}
     END as std_dev_multiplier,
     CASE
-      ${Object.entries(clientConfig.event_configs || {}).map(([event, config]) => `WHEN event_name = '${event}' THEN ${config.min_average}`).join('\n      ')}
-      ELSE ${clientConfig.min_average}
+      WHEN event_name = 'purchase' THEN ${dataform.projectConfig.vars.purchase_min_average}
+      ELSE ${dataform.projectConfig.vars.min_average}
     END as min_average,
     -- Handle null standard deviations by using a percentage of the average
     IFNULL(stddev_count, avg_count * 0.1) as adjusted_stddev

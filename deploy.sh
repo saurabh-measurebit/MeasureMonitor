@@ -24,6 +24,20 @@ vars:
   analytics_table: $ANALYTICS_TABLE
   dataset: $DATASET
   events_list: $EVENTS_LIST
+  
+  # Anomaly detection thresholds (defaults)
+  threshold_percentage: "25"
+  std_dev_multiplier: "1.5"
+  min_average: "10"
+  
+  # Event-specific thresholds (override defaults)
+  purchase_threshold_percentage: "15"
+  purchase_std_dev_multiplier: "2.0"
+  purchase_min_average: "5"
+  
+  # Client identification (for logging)
+  client_id: default
+  dataset_id: $DATASET
 EOL
 
 echo "Compiling Dataform project..."

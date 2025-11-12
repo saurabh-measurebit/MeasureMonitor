@@ -9,12 +9,6 @@ config {
   dependencies: ["event_check_anomalies"]
 }
 
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
-}
-
 -- Log all anomaly detection results with a timestamp
 ${when(incremental(), `
 -- When running incrementally, only log today's results
@@ -29,8 +23,8 @@ SELECT
   alert_message,
   detection_time,
   CURRENT_DATE() as detection_date,
-  '${clientConfig.client_id}' as client_id,
-  '${clientConfig.dataset_id}' as dataset_id
+  '${dataform.projectConfig.vars.client_id}' as client_id,
+  '${dataform.projectConfig.vars.dataset_id}' as dataset_id
 FROM
   ${ref("event_check_anomalies")}
 `, `
@@ -46,8 +40,8 @@ SELECT
   alert_message,
   detection_time,
   CURRENT_DATE() as detection_date,
-  '${clientConfig.client_id}' as client_id,
-  '${clientConfig.dataset_id}' as dataset_id
+  '${dataform.projectConfig.vars.client_id}' as client_id,
+  '${dataform.projectConfig.vars.dataset_id}' as dataset_id
 FROM
   ${ref("event_check_anomalies")}
 `)}

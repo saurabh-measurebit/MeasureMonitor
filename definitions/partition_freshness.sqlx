@@ -1,0 +1,71 @@
+config {
+  type: "table",
+  description: "Checks if the latest GA4 partition is fresh (not stale/delayed)",
+  dependencies: ["latest_partition"],
+  tags: ["event_monitoring", "data_quality"],
+  schema: "dataform"
+}
+
+-- Check partition freshness
+WITH latest_partition_info AS (
+  SELECT 
+    latest_partition,
+    PARSE_DATE('%Y%m%d', latest_partition) as partition_date
+  FROM ${ref("latest_partition")}
+),
+freshness_check AS (
+  SELECT
+    latest_partition,
+    partition_date,
+    CURRENT_DATE() as check_date,
+    CURRENT_TIMESTAMP() as check_timestamp,
+    DATE_DIFF(CURRENT_DATE(), partition_date, DAY) as days_old,
+    -- Calculate hours since partition date (assuming data should be available by 10 AM UTC next day)
+    TIMESTAMP_DIFF(
+      CURRENT_TIMESTAMP(), 
+      TIMESTAMP(DATE_ADD(partition_date, INTERVAL 1 DAY)), 
+      HOUR
+    ) as hours_since_expected_load,
+    -- Determine if partition is stale
+    CASE
+      -- If partition is from today, it's fresh
+      WHEN partition_date = CURRENT_DATE() THEN FALSE
+      -- If partition is from yesterday and it's before 10 AM UTC, it's acceptable
+      WHEN partition_date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) 
+        AND EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) < 10 THEN FALSE
+      -- Otherwise, it's stale
+      ELSE TRUE
+    END as is_stale,
+    -- Create status message
+    CASE
+      WHEN partition_date = CURRENT_DATE() THEN 'FRESH: Data is current'
+      WHEN partition_date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) 
+        AND EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) < 10 
+        THEN 'ACCEPTABLE: Yesterday data, within grace period'
+      ELSE CONCAT(
+        'STALE: Latest partition is ', 
+        CAST(DATE_DIFF(CURRENT_DATE(), partition_date, DAY) AS STRING),
+        ' day(s) old. Expected daily updates.'
+      )
+    END as status_message
+  FROM latest_partition_info
+)
+
+SELECT
+  latest_partition,
+  partition_date,
+  check_date,
+  check_timestamp,
+  days_old,
+  hours_since_expected_load,
+  is_stale,
+  status_message,
+  -- Add severity level
+  CASE
+    WHEN days_old = 0 THEN 'OK'
+    WHEN days_old = 1 AND EXTRACT(HOUR FROM check_timestamp) < 10 THEN 'OK'
+    WHEN days_old = 1 THEN 'WARNING'
+    WHEN days_old >= 2 THEN 'CRITICAL'
+    ELSE 'UNKNOWN'
+  END as severity
+FROM freshness_check

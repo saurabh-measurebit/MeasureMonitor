@@ -1,10 +1,25 @@
-defaultProject: <project_id>
+defaultProject: <project_xxx>
 defaultLocation: US
 defaultDataset: dataform
 defaultAssertionDataset: dataform_assertions
 dataformCoreVersion: 3.0.0
 vars:
-  analytics_table: <analytics_xxxxx>
-  dataset: <project_id>
+  analytics_table: <analytics_xxx>
+  dataset: <dataset_xxx>
   events_list: purchase#session_start#page_view # '#' separated event names
-#
+  
+  # Anomaly detection thresholds (defaults)
+  threshold_percentage: "25"
+  std_dev_multiplier: "1.5"
+  min_average: "10"
+  
+  # Event-specific thresholds (override defaults)
+  # Format: event_name:threshold_percentage:std_dev_multiplier:min_average
+  purchase_threshold_percentage: "15"
+  purchase_std_dev_multiplier: "2.0"
+  purchase_min_average: "5"
+  
+  # Client identification (for logging)
+  client_id: titanshutters
+  dataset_id: sgtm-titanshutters
+  

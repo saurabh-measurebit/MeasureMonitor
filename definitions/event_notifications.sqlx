@@ -5,16 +5,27 @@ config {
   tags: ["event_monitoring", "notifications"]
 }
 
--- Import the client configuration
-js {
-  const config = require("./client_config");
-  const clientConfig = config.clientConfig;
-}
-
 -- This assertion will fail if any rows (alerts) exist in event_anomalies
+-- But now it will provide detailed information about the anomalies
+WITH anomalies AS (
+  SELECT
+    event_name,
+    event_count,
+    event_date,
+    avg_count,
+    lower_threshold,
+    alert_message
+  FROM
+    ${ref("event_check_anomalies")}
+  WHERE
+    is_anomaly = TRUE
+)
+
+-- If anomalies exist, this will fail with a detailed error message
 SELECT
-  *
+  CONCAT(
+    'Found ', CAST(COUNT(*) AS STRING), ' event anomalies:\n',
+    STRING_AGG(alert_message, '\n')
+  ) AS error_message
 FROM
-  ${ref("event_check_anomalies")}
-WHERE
-  is_anomaly = TRUE
+  anomalies
